@@ -1,0 +1,23 @@
+{
+  "name": "imc-udp-client-node-hexagonal",
+  "version": "1.0.0",
+  "description": "Cliente interactivo UDP para cálculo de IMC con Arquitectura Hexagonal en Node.js y TypeScript",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": ["udp", "imc", "hexagonal-architecture", "typescript", "cli"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
