@@ -4,7 +4,7 @@ Cliente interactivo por terminal desarrollado en **Node.js** y **TypeScript**, c
 
 ---
 
-## 🏛️ Arquitectura del Proyecto
+## Arquitectura del Proyecto
 
 El cliente desacopla completamente la lógica de negocio y los casos de uso tanto del transporte de red (UDP) como de la interfaz de usuario (CLI):
 
@@ -39,7 +39,7 @@ imc-udp-client-node-hexagonal/
 
 ---
 
-## 📡 Protocolo de Comunicación UDP/IP
+## Protocolo de Comunicación UDP/IP
 
 El cliente envía datagramas UDP en formato JSON y espera la respuesta correlacionada con el mismo `id`:
 
@@ -68,7 +68,7 @@ El cliente envía datagramas UDP en formato JSON y espera la respuesta correlaci
 
 ---
 
-## 🚀 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### Prerrequisitos
 - Node.js >= 20
