@@ -105,25 +105,6 @@ El cliente envía datagramas UDP en formato JSON y espera la respuesta correlaci
    ```
 
 
-## Separación hexagonal y verificación
-
-El dominio contiene los modelos y reglas del IMC. La aplicación expone puertos de entrada y orquesta los casos de uso. Los adaptadores de infraestructura implementan la consola, UDP y el registro de eventos. Las dependencias apuntan hacia aplicación y dominio; estas capas no importan sockets ni consola.
-
-La carpeta `src/bootstrap` conecta las implementaciones concretas. Sus funciones permiten crear el cliente sin arrancarlo, para reutilizar los casos de uso y probarlos. `src/index.ts` es el punto de entrada ejecutable. Los módulos JSON del adaptador UDP validan el contrato externo antes de entregar los datos a la aplicación.
-
-Flujo completo:
-
-`Consola → ConsultarImcUseCase → NetworkClientPort → UDP → CalcularImcUseCase → Dominio IMC`
-
-La respuesta recorre el camino inverso. El servidor acepta altura en metros o centímetros. El cliente correlaciona cada respuesta por el id y contempla un tiempo de espera; UDP no garantiza entrega.
-
-Para ejecutar, abrir una terminal en cada proyecto. Primero ejecutar `npm run dev` en el servidor y después en el cliente. Por defecto se utiliza el puerto 9050 y el cliente apunta a 127.0.0.1. Para otro equipo, configurar SERVER_HOST en el cliente con la dirección del servidor.
-
-Validación: `npm run build` y `npm test`. Las pruebas incluyen datagramas reales, formatos inválidos y correlación de respuestas concurrentes.
-
-El proyecto ofrece UDP y RPC sobre HTTP en Node.js. RPC permite invocar métodos remotos, pero no implementa Java RMI ni su protocolo. Si la guía exige Java RMI, confirmar con el docente si acepta esta alternativa.
-
-
 ## Invocación remota con Node.js (RPC)
 
 No requiere Java ni dependencias de producción adicionales. Utiliza Node.js 20 o superior y TypeScript. Es un protocolo RPC propio sobre HTTP, no JSON-RPC 2.0 ni Java RMI.
@@ -150,7 +131,5 @@ Contrato: `POST /rpc`, cuerpo JSON:
 `{ "id": "ejemplo-1", "method": "calcularImc", "params": { "peso": 70, "altura": 175 } }`
 
 La respuesta incluye `id` y `result`. El resultado conserva el contrato del caso de uso: status, data o error y timestamp. Un fallo de protocolo devuelve un estado HTTP de error y el campo error; los errores de negocio se devuelven dentro de result con status ERROR.
-
-La consola depende del puerto ConsultarImcUseCase; el adaptador RPC del cliente implementa NetworkClientPort. En el servidor, el adaptador RPC invoca CalcularImcUseCase. No se duplican las reglas de IMC. Los archivos createRpcClient/createRpcServer en src/bootstrap conectan las implementaciones.
 
 Pruebas unitarias y de transporte: `npm test`. Para verificar ambos proyectos juntos, compilar ambos y ejecutar `npm run test:rpc:e2e` desde el cliente. La prueba presupone que las carpetas del cliente y servidor están una al lado de la otra con sus nombres actuales.
