@@ -1,3 +1,4 @@
+import { decodeImcResponse } from './ImcResponseJson.js';
 import dgram, { Socket } from 'node:dgram';
 import { NetworkClientPort } from '../../../application/ports/out/NetworkClientPort.js';
 import { SolicitudImc } from '../../../domain/model/SolicitudImc.js';
@@ -16,10 +17,14 @@ export interface UdpClientConfig {
 export class UdpClientAdapter implements NetworkClientPort {
   private socket: Socket;
   private isClosed = false;
+  private readonly pending = new Set<(message: string) => void>();
 
   constructor(private readonly config: UdpClientConfig) {
     this.socket = dgram.createSocket('udp4');
-    this.socket.unref(); // Permite que el proceso de Node no quede colgado si no hay tareas activas
+    this.socket.unref();
+    this.socket.on('error', (error: Error) => {
+      for (const cancel of this.pending) cancel(error.message);
+    });
   }
 
   async enviarSolicitud(solicitud: SolicitudImc): Promise<RespuestaImc> {
@@ -35,41 +40,22 @@ export class UdpClientAdapter implements NetworkClientPort {
       // Escuchador temporal correlacionado
       const messageHandler = (msg: Buffer) => {
         try {
-          const rawText = msg.toString('utf-8');
-          const data = JSON.parse(rawText);
-
-          // Verificamos si la respuesta corresponde a nuestra solicitud
-          if (!data.id || data.id === solicitud.id) {
+          const respuesta = decodeImcResponse(msg.toString('utf-8'), solicitud.id);
+          if (respuesta) {
             cleanup();
-
-            if (data.status === 'SUCCESS' && data.data) {
-              resolve(
-                new RespuestaImc({
-                  id: data.id,
-                  status: 'SUCCESS',
-                  imc: data.data.imc,
-                  clasificacion: data.data.clasificacion,
-                  interpretacion: data.data.interpretacion,
-                  timestamp: data.timestamp
-                })
-              );
-            } else {
-              resolve(
-                new RespuestaImc({
-                  id: data.id,
-                  status: 'ERROR',
-                  errorMensaje: data.error?.mensaje || 'Error devuelto por el servidor.',
-                  timestamp: data.timestamp
-                })
-              );
-            }
+            resolve(respuesta);
           }
         } catch {
           // Si el paquete recibido no corresponde o es inválido, esperamos al siguiente datagrama o timeout
         }
       };
 
+      const cancel = (message: string) => {
+        cleanup();
+        resolve(new RespuestaImc({ id: solicitud.id, status: 'ERROR', errorMensaje: message }));
+      };
       const cleanup = () => {
+        this.pending.delete(cancel);
         clearTimeout(timer);
         this.socket.removeListener('message', messageHandler);
       };
@@ -86,6 +72,7 @@ export class UdpClientAdapter implements NetworkClientPort {
         );
       }, timeoutLimit);
 
+      this.pending.add(cancel);
       this.socket.on('message', messageHandler);
 
       // Preparamos y enviamos el datagrama UDP
@@ -123,9 +110,13 @@ export class UdpClientAdapter implements NetworkClientPort {
     return new Promise((resolve) => {
       if (!this.isClosed) {
         this.isClosed = true;
-        this.socket.close(() => {
-          resolve();
-        });
+        for (const cancel of this.pending) cancel('El cliente UDP se ha cerrado.');
+        try {
+          this.socket.close(() => resolve());
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'ERR_SOCKET_DGRAM_NOT_RUNNING') resolve();
+          else throw error;
+        }
       } else {
         resolve();
       }

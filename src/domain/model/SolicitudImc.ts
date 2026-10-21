@@ -7,10 +7,10 @@ export class SolicitudImc {
   readonly altura: number;
 
   constructor(peso: number, altura: number, id?: string) {
-    if (typeof peso !== 'number' || isNaN(peso) || peso <= 0) {
+    if (typeof peso !== 'number' || !Number.isFinite(peso) || peso <= 0) {
       throw new Error('El peso ingresado debe ser un número positivo mayor a cero.');
     }
-    if (typeof altura !== 'number' || isNaN(altura) || altura <= 0) {
+    if (typeof altura !== 'number' || !Number.isFinite(altura) || altura <= 0) {
       throw new Error('La altura ingresada debe ser un número positivo mayor a cero.');
     }
 

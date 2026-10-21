@@ -1,27 +1,16 @@
-import { UdpClientAdapter } from './infrastructure/adapters/udp/UdpClientAdapter.js';
-import { ConsultarImcUseCaseImpl } from './application/usecases/ConsultarImcUseCaseImpl.js';
-import { ConsoleCliAdapter } from './infrastructure/adapters/cli/ConsoleCliAdapter.js';
+import { createClient } from './bootstrap/createClient.js';
 
-const SERVER_HOST = process.env.SERVER_HOST || '127.0.0.1';
-const SERVER_PORT = Number(process.env.SERVER_PORT) || 9050;
-const TIMEOUT_MS = Number(process.env.TIMEOUT_MS) || 4000;
-
-const udpAdapter = new UdpClientAdapter({
-  serverHost: SERVER_HOST,
-  serverPort: SERVER_PORT,
-  timeoutMs: TIMEOUT_MS
+const { network, cli } = createClient({
+  serverHost: process.env.SERVER_HOST || '127.0.0.1',
+  serverPort: Number(process.env.SERVER_PORT || 9050),
+  timeoutMs: Number(process.env.TIMEOUT_MS || 4000)
 });
 
-const consultarImcUseCase = new ConsultarImcUseCaseImpl(udpAdapter);
-const cliAdapter = new ConsoleCliAdapter(consultarImcUseCase);
-
 async function bootstrap() {
-  try {
-    await cliAdapter.iniciar();
-  } finally {
-    await udpAdapter.cerrar();
-    process.exit(0);
-  }
+  try { await cli.iniciar(); }
+  finally { await network.cerrar(); }
 }
-
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});

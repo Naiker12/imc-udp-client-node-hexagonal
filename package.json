@@ -9,9 +9,18 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:rpc": "tsx src/rpc.ts",
+    "start:rpc": "node dist/rpc.js",
+    "test:rpc:e2e": "node test/rpc-e2e.mjs"
   },
-  "keywords": ["udp", "imc", "hexagonal-architecture", "typescript", "cli"],
+  "keywords": [
+    "udp",
+    "imc",
+    "hexagonal-architecture",
+    "typescript",
+    "cli"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {

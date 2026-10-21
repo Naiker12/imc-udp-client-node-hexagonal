@@ -1,3 +1,4 @@
+import { RespuestaImc } from '../../../domain/model/RespuestaImc.js';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { ConsultarImcUseCase } from '../../../application/ports/in/ConsultarImcUseCase.js';
@@ -7,7 +8,7 @@ import { ConsultarImcUseCase } from '../../../application/ports/in/ConsultarImcU
  * Permite interactuar con el usuario en la terminal, solicitar datos y presentar la respuesta.
  */
 export class ConsoleCliAdapter {
-  constructor(private readonly consultarImcUseCase: ConsultarImcUseCase) {}
+  constructor(private readonly consultarImcUseCase: ConsultarImcUseCase, private readonly transport: 'UDP' | 'RPC' = 'UDP') {}
 
   async iniciar(): Promise<void> {
     const rl = readline.createInterface({ input, output });
@@ -20,18 +21,18 @@ export class ConsoleCliAdapter {
     while (continuar) {
       try {
         console.log('\n\x1b[36m────────────────────────────────────────────────────────────\x1b[0m');
-        console.log('\x1b[1m📋 Ingrese los datos del paciente para la consulta UDP:\x1b[0m');
+        console.log('\x1b[1m📋 Ingrese los datos del paciente para la consulta:\x1b[0m');
 
         const pesoStr = await rl.question('\x1b[33m▶ Peso en kilogramos (ej: 75.5):\x1b[0m ');
         const alturaStr = await rl.question('\x1b[33m▶ Altura en metros o cm (ej: 1.75 o 175):\x1b[0m ');
 
-        const peso = parseFloat(pesoStr.trim().replace(',', '.'));
-        const altura = parseFloat(alturaStr.trim().replace(',', '.'));
+        const peso = Number(pesoStr.trim().replace(',', '.'));
+        const altura = Number(alturaStr.trim().replace(',', '.'));
 
         if (isNaN(peso) || isNaN(altura)) {
           console.log('\x1b[31m✖ Error: Tanto el peso como la altura deben ser valores numéricos válidos.\x1b[0m');
         } else {
-          console.log('\n\x1b[90m⏳ Enviando datagrama UDP al servidor...\x1b[0m');
+          console.log(`\nConsultando al servidor mediante ${this.transport}...`);
           const startTime = performance.now();
 
           const respuesta = await this.consultarImcUseCase.ejecutar({ peso, altura });
@@ -55,12 +56,12 @@ export class ConsoleCliAdapter {
 
   private mostrarEncabezado(): void {
     console.log('\x1b[34m============================================================\x1b[0m');
-    console.log('\x1b[1m\x1b[36m   🩺 CALCULADORA DE IMC — CLIENTE UDP / IP (HEXAGONAL)   \x1b[0m');
+    console.log(`CALCULADORA DE IMC — CLIENTE ${this.transport} (HEXAGONAL)`);
     console.log('\x1b[34m============================================================\x1b[0m');
-    console.log('\x1b[90m Protocolo: Datagramas UDP | Arquitectura: Ports & Adapters \x1b[0m');
+    console.log(`Protocolo: ${this.transport} | Arquitectura: Puertos y Adaptadores`);
   }
 
-  private mostrarResultado(respuesta: any, elapsedMs: string): void {
+  private mostrarResultado(respuesta: RespuestaImc, elapsedMs: string): void {
     console.log('\n\x1b[36m┌─────────────────── RESULTADO DEL SERVIDOR ────────────────┐\x1b[0m');
 
     if (respuesta.esExitosa()) {
